@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>投资审查委员会委员表决系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/davidshimjs-qrcodejs@0.0.2/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1a3a8f 0%, #2d5cc2 100%);
+            color: white;
+            padding: 25px 0;
+            border-radius: 0 0 15px 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo i {
+            font-size: 2.5rem;
+        }
+
+        .logo h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .logo span {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .user-info {
+            background-color: rgba(255, 255, 255, 0.15);
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 0.95rem;
+        }
+
+        .role-selector {
+            display: flex;
+            background-color: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+        }
+
+        .role-tab {
+            flex: 1;
+            text-align: center;
+            padding: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 4px solid transparent;
+        }
+
+        .role-tab:hover {
+            background-color: #f8f9fa;
+        }
+
+        .role-tab.active {
+            color: #1a3a8f;
+            border-bottom-color: #1a3a8f;
+            background-color: #f8f9fa;
+        }
+
+        .role-content {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .role-content.active {
+            display: block;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            color: #1a3a8f;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .card-title i {
+            font-size: 1.4rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #444;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #1a3a8f;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #1a3a8f;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            text-align: center;
+        }
+
+        .btn:hover {
+            background-color: #2d5cc2;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+        }
+
+        .btn-success:hover {
+            background-color: #218838;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .voting-options {
+            display: flex;
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        .vote-option {
+            flex: 1;
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s;
+            background-color: #f8f9fa;
+        }
+
+        .vote-option:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .vote-option.selected {
+            border-color: #1a3a8f;
+            background-color: rgba(26, 58, 143, 0.05);
+        }
+
+        .vote-option.agree.selected {
+            border-color: #28a745;
+            background-color: rgba(40, 167, 69, 0.05);
+        }
+
+        .vote-option.disagree.selected {
+            border-color: #dc3545;
+            background-color: rgba(220, 53, 69, 0.05);
+        }
+
+        .vote-option.review.selected {
+            border-color: #ffc107;
+            background-color: rgba(255, 193, 7, 0.05);
+        }
+
+        .vote-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .vote-option.agree .vote-icon {
+            color: #28a745;
+        }
+
+        .vote-option.disagree .vote-icon {
+            color: #dc3545;
+        }
+
+        .vote-option.review .vote-icon {
+            color: #ffc107;
+        }
+
+        .vote-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .vote-desc {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .qr-container {
+            text-align: center;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .qr-code {
+            display: inline-block;
+            padding: 10px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+        }
+
+        .meeting-list {
+            margin-top: 20px;
+        }
+
+        .meeting-item {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 5px solid #1a3a8f;
+            transition: all 0.3s;
+        }
+
+        .meeting-item:hover {
+            background-color: #e9ecef;
+        }
+
+        .meeting-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .meeting-title {
+            font-weight: 600;
+            font-size: 1.2rem;
+            color: #1a3a8f;
+        }
+
+        .meeting-status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-upcoming {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        .status-ongoing {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .status-ended {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .vote-results {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .vote-result-item {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            background-color: white;
+            font-weight: 600;
+        }
+
+        .result-agree {
+            color: #28a745;
+            border: 1px solid #28a745;
+        }
+
+        .result-disagree {
+            color: #dc3545;
+            border: 1px solid #dc3545;
+        }
+
+        .result-review {
+            color: #ffc107;
+            border: 1px solid #ffc107;
+        }
+
+        .comment-section {
+            margin-top: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            resize: vertical;
+        }
+
+        .file-upload {
+            margin-top: 15px;
+        }
+
+        .file-label {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #e9ecef;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .file-label:hover {
+            background-color: #dee2e6;
+        }
+
+        .file-list {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .export-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .vote-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .login-container {
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 40px;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .login-qr {
+            margin: 30px 0;
+        }
+
+        .member-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1a3a8f;
+            margin-bottom: 10px;
+        }
+
+        .meeting-details {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+
+        .detail-row {
+            display: flex;
+            margin-bottom: 10px;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            min-width: 120px;
+            color: #555;
+        }
+
+        .detail-value {
+            color: #333;
+        }
+
+        .members-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .member-tag {
+            background-color: #e9ecef;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .voting-options {
+                flex-direction: column;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo">
+                        <i class="fas fa-vote-yea"></i>
+                        <div>
+                            <h1>投资审查委员会委员表决系统</h1>
+                            <span>安全 • 高效 • 便捷</span>
+                        </div>
+                    </div>
+                    <div class="user-info">
+                        <span id="current-role">投审会秘书</span> | <span id="current-user">未登录</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="container">
+            <!-- 角色选择器 -->
+            <div class="role-selector">
+                <div class="role-tab active" data-role="secretary">投审会秘书</div>
+                <div class="role-tab" data-role="member">委员表决</div>
+            </div>
+
+            <!-- 秘书端内容 -->
+            <div id="secretary-content" class="role-content active">
+                <div class="dashboard">
+                    <!-- 会议管理 -->
+                    <div class="card">
+                        <div class="card-title">
+                            <i class="fas fa-calendar-alt"></i>
+                            <h2>会议管理</h2>
+                        </div>
+                        <div class="form-group">
+                            <label for="meeting-session">会议届次</label>
+                            <input type="text" id="meeting-session" class="form-control" placeholder="例如：第15届第3次会议">
+                        </div>
+                        <div class="form-group">
+                            <label for="meeting-content">表决内容</label>
+                            <textarea id="meeting-content" class="form-control" placeholder="请输入本次会议需要表决的具体内容..." rows="4"></textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="vote-start">表决开始时间</label>
+                                <input type="datetime-local" id="vote-start" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="vote-end">表决结束时间</label>
+                                <input type="datetime-local" id="vote-end" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="committee-members">参评委员（每行一个）</label>
+                            <textarea id="committee-members" class="form-control" placeholder="请输入委员姓名，每行一个" rows="4"></textarea>
+                        </div>
+                        <div class="btn-group">
+                            <button id="save-meeting" class="btn">保存会议</button>
+                            <button id="send-notifications" class="btn btn-success">发送表决通知</button>
+                            <button id="clear-form" class="btn btn-secondary">清空</button>
+                        </div>
+                    </div>
+
+                    <!-- 会议列表 -->
+                    <div class="card">
+                        <div class="card-title">
+                            <i class="fas fa-list-alt"></i>
+                            <h2>会议列表</h2>
+                        </div>
+                        <div id="meetings-list" class="meeting-list">
+                            <!-- 会议项将通过JS动态添加 -->
+                        </div>
+                        <div class="export-section">
+                            <button id="export-excel" class="btn">导出表决台账 (Excel)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 邮件通知模拟 -->
+                <div class="card">
+                    <div class="card-title">
+                        <i class="fas fa-envelope"></i>
+                        <h2>邮件通知模拟</h2>
+                    </div>
+                    <div class="form-group">
+                        <label for="email-preview">邮件内容预览</label>
+                        <textarea id="email-preview" class="form-control" rows="5" readonly></textarea>
+                    </div>
+                    <div id="qr-section" class="qr-container hidden">
+                        <h3>委员登录二维码</h3>
+                        <div id="qrcode" class="qr-code"></div>
+                        <p>委员扫描此二维码即可登录表决系统</p>
+                        <p style="font-size: 12px; color: #666; margin-top: 10px;">会议ID: <span id="current-meeting-id"></span></p>
+                        <div id="deployment-status" style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 5px; display: none;">
+                            <p style="font-size: 12px; color: #856404; margin: 0;">
+                                <strong>提示：</strong><span id="deployment-message"></span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 委员端内容 -->
+            <div id="member-content" class="role-content">
+                <!-- 委员登录界面 -->
+                <div id="member-login" class="login-container">
+                    <h2>委员登录</h2>
+                    <p>请扫描秘书发送的二维码登录表决系统</p>
+                    <div class="qr-container">
+                        <div id="login-qrcode" class="qr-code"></div>
+                        <p>或手动输入会议ID和委员姓名登录</p>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="meeting-id-input" class="form-control" placeholder="会议ID">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="member-name-input" class="form-control" placeholder="委员姓名">
+                    </div>
+                    <button id="manual-login" class="btn">登录</button>
+                </div>
+
+                <!-- 委员表决界面 -->
+                <div id="member-voting" class="hidden">
+                    <div class="card">
+                        <div class="card-title">
+                            <i class="fas fa-vote-yea"></i>
+                            <h2>表决事项</h2>
+                        </div>
+                        <div class="meeting-details">
+                            <div class="detail-row">
+                                <div class="detail-label">会议届次：</div>
+                                <div id="current-meeting-session" class="detail-value"></div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">表决内容：</div>
+                                <div id="current-meeting-content" class="detail-value"></div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">表决时间：</div>
+                                <div id="current-vote-time" class="detail-value"></div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">当前委员：</div>
+                                <div id="current-member-name" class="detail-value"></div>
+                            </div>
+                        </div>
+
+                        <div class="voting-options">
+                            <div class="vote-option agree" data-vote="agree">
+                                <div class="vote-icon">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <div class="vote-text">同意</div>
+                                <div class="vote-desc">赞成该表决事项</div>
+                            </div>
+                            <div class="vote-option disagree" data-vote="disagree">
+                                <div class="vote-icon">
+                                    <i class="fas fa-times-circle"></i>
+                                </div>
+                                <div class="vote-text">不同意</div>
+                                <div class="vote-desc">反对该表决事项</div>
+                            </div>
+                            <div class="vote-option review" data-vote="review">
+                                <div class="vote-icon">
+                                    <i class="fas fa-pause-circle"></i>
+                                </div>
+                                <div class="vote-text">补充资料后再议</div>
+                                <div class="vote-desc">需要补充材料再行审议</div>
+                            </div>
+                        </div>
+
+                        <div class="comment-section">
+                            <div class="form-group">
+                                <label for="member-comment">补充意见（可选）</label>
+                                <textarea id="member-comment" class="form-control" placeholder="请输入您的补充意见..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>附件上传（可选）</label>
+                                <div class="file-upload">
+                                    <label for="file-upload-input" class="file-label">
+                                        <i class="fas fa-upload"></i> 选择图片文件
+                                    </label>
+                                    <input type="file" id="file-upload-input" accept="image/*" multiple style="display: none;">
+                                    <div id="file-list" class="file-list"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="btn-group">
+                            <button id="submit-vote" class="btn btn-success">提交表决</button>
+                            <button id="logout-member" class="btn btn-secondary">退出登录</button>
+                        </div>
+
+                        <div id="vote-success" class="alert alert-success hidden">
+                            <i class="fas fa-check-circle"></i> 表决已成功提交！
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 全局提示 -->
+            <div id="alert-message" class="alert"></div>
+        </div>
+    </div>
+
+    <script>
+        // 检测当前是否部署在服务器上
+        function isDeployed() {
+            return window.location.protocol === 'https:' || window.location.protocol === 'http:';
+        }
+
+        // 获取当前网址（用于生成二维码）
+        function getCurrentUrl() {
+            return window.location.origin + window.location.pathname;
+        }
+
+        // 应用状态管理
+        const AppState = {
+            currentRole: 'secretary',
+            currentMeeting: null,
+            currentMember: null,
+            meetings: JSON.parse(localStorage.getItem('meetings')) || [],
+            votes: JSON.parse(localStorage.getItem('votes')) || {},
+            initialized: false
+        };
+
+        // DOM元素
+        const DOM = {
+            roleTabs: document.querySelectorAll('.role-tab'),
+            secretaryContent: document.getElementById('secretary-content'),
+            memberContent: document.getElementById('member-content'),
+            memberLogin: document.getElementById('member-login'),
+            memberVoting: document.getElementById('member-voting'),
+            currentRole: document.getElementById('current-role'),
+            currentUser: document.getElementById('current-user'),
+            meetingsList: document.getElementById('meetings-list'),
+            emailPreview: document.getElementById('email-preview'),
+            qrSection: document.getElementById('qr-section'),
+            qrcodeDiv: document.getElementById('qrcode'),
+            loginQrcodeDiv: document.getElementById('login-qrcode'),
+            alertMessage: document.getElementById('alert-message'),
+            currentMeetingIdSpan: document.getElementById('current-meeting-id'),
+            deploymentStatus: document.getElementById('deployment-status'),
+            deploymentMessage: document.getElementById('deployment-message')
+        };
+
+        // 初始化应用
+        function initApp() {
+            if (AppState.initialized) return;
+            
+            // 显示部署状态
+            showDeploymentStatus();
+            
+            // 绑定事件监听器
+            bindEvents();
+            
+            // 加载会议列表
+            loadMeetingsList();
+            
+            // 设置默认时间
+            setDefaultTimes();
+            
+            // 生成测试数据（首次运行时）
+            if (AppState.meetings.length === 0) {
+                generateSampleData();
+            }
+            
+            // 生成示例登录二维码
+            generateLoginQRCode();
+            
+            AppState.initialized = true;
+            
+            // 检查URL参数，自动登录
+            checkUrlParams();
+        }
+
+        // 显示部署状态
+        function showDeploymentStatus() {
+            if (isDeployed()) {
+                // 已部署到服务器
+                DOM.deploymentStatus.style.display = 'block';
+                DOM.deploymentMessage.textContent = '系统已部署，二维码可直接使用！';
+                DOM.deploymentStatus.style.backgroundColor = '#d4edda';
+                DOM.deploymentStatus.style.color = '#155724';
+                console.log('系统已部署，当前网址:', getCurrentUrl());
+            } else {
+                // 本地运行
+                DOM.deploymentStatus.style.display = 'block';
+                DOM.deploymentMessage.textContent = '当前为本地运行，微信扫码可能无法直接打开。请将系统部署到GitHub Pages后使用。';
+                console.log('本地运行模式');
+            }
+        }
+
+        // 绑定事件
+        function bindEvents() {
+            // 角色切换
+            DOM.roleTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const role = tab.getAttribute('data-role');
+                    switchRole(role);
+                });
+            });
+
+            // 秘书端功能
+            document.getElementById('save-meeting').addEventListener('click', saveMeeting);
+            document.getElementById('send-notifications').addEventListener('click', sendNotifications);
+            document.getElementById('clear-form').addEventListener('click', clearForm);
+            document.getElementById('export-excel').addEventListener('click', exportToExcel);
+
+            // 委员端功能
+            document.getElementById('manual-login').addEventListener('click', manualLogin);
+            document.getElementById('submit-vote').addEventListener('click', submitVote);
+            document.getElementById('logout-member').addEventListener('click', logoutMember);
+
+            // 文件上传
+            document.getElementById('file-upload-input').addEventListener('change', handleFileUpload);
+
+            // 表决选项选择
+            document.querySelectorAll('.vote-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    document.querySelectorAll('.vote-option').forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+                });
+            });
+
+            // 表单输入监听（用于邮件预览）
+            document.getElementById('meeting-session').addEventListener('input', updateEmailPreview);
+            document.getElementById('meeting-content').addEventListener('input', updateEmailPreview);
+            document.getElementById('vote-start').addEventListener('input', updateEmailPreview);
+            document.getElementById('vote-end').addEventListener('input', updateEmailPreview);
+            document.getElementById('committee-members').addEventListener('input', updateEmailPreview);
+        }
+
+        // 切换角色
+        function switchRole(role) {
+            AppState.currentRole = role;
+            
+            // 更新UI
+            DOM.roleTabs.forEach(tab => {
+                tab.classList.toggle('active', tab.getAttribute('data-role') === role);
+            });
+            
+            DOM.secretaryContent.classList.toggle('active', role === 'secretary');
+            DOM.memberContent.classList.toggle('active', role === 'member');
+            
+            // 更新头部信息
+            DOM.currentRole.textContent = role === 'secretary' ? '投审会秘书' : '委员表决';
+            
+            if (role === 'member') {
+                // 重置委员登录状态
+                resetMemberLogin();
+            }
+        }
+
+        // 保存会议
+        function saveMeeting() {
+            const session = document.getElementById('meeting-session').value.trim();
+            const content = document.getElementById('meeting-content').value.trim();
+            const startTime = document.getElementById('vote-start').value;
+            const endTime = document.getElementById('vote-end').value;
+            const membersText = document.getElementById('committee-members').value.trim();
+            
+            if (!session || !content || !startTime || !endTime || !membersText) {
+                showAlert('请填写所有必填字段！', 'error');
+                return;
+            }
+            
+            if (new Date(endTime) <= new Date(startTime)) {
+                showAlert('表决结束时间必须晚于开始时间！', 'error');
+                return;
+            }
+            
+            const members = membersText.split('\n').filter(name => name.trim() !== '').map(name => name.trim());
+            if (members.length === 0) {
+                showAlert('请至少添加一名委员！', 'error');
+                return;
+            }
+            
+            const meetingId = 'meeting_' + Date.now();
+            const meeting = {
+                id: meetingId,
+                session: session,
+                content: content,
+                startTime: startTime,
+                endTime: endTime,
+                members: members,
+                createdAt: new Date().toISOString(),
+                status: getMeetingStatus(startTime, endTime)
+            };
+            
+            // 保存到状态
+            AppState.meetings.push(meeting);
+            AppState.votes[meetingId] = {};
+            
+            // 保存到本地存储
+            localStorage.setItem('meetings', JSON.stringify(AppState.meetings));
+            localStorage.setItem('votes', JSON.stringify(AppState.votes));
+            
+            // 更新UI
+            loadMeetingsList();
+            showAlert('会议已成功保存！', 'success');
+            
+            // 生成会议二维码并显示
+            generateMeetingQRCode(meetingId);
+            DOM.qrSection.classList.remove('hidden');
+            
+            // 显示会议ID
+            if (DOM.currentMeetingIdSpan) {
+                DOM.currentMeetingIdSpan.textContent = meetingId;
+            }
+        }
+
+        // 生成会议二维码
+        function generateMeetingQRCode(meetingId) {
+            DOM.qrcodeDiv.innerHTML = '';
+            
+            if (isDeployed()) {
+                // 已部署 - 生成完整链接
+                const loginUrl = `${getCurrentUrl()}?meeting=${meetingId}`;
+                
+                try {
+                    // 使用QRCode库生成二维码
+                    new QRCode(DOM.qrcodeDiv, {
+                        text: loginUrl,
+                        width: 200,
+                        height: 200,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                    
+                    console.log('二维码链接（可微信扫码）:', loginUrl);
+                    
+                    // 显示二维码链接
+                    const linkInfo = document.createElement('p');
+                    linkInfo.style.fontSize = '10px';
+                    linkInfo.style.color = '#666';
+                    linkInfo.style.marginTop = '10px';
+                    linkInfo.style.wordBreak = 'break-all';
+                    linkInfo.textContent = `链接: ${loginUrl}`;
+                    DOM.qrcodeDiv.parentNode.appendChild(linkInfo);
+                    
+                } catch (error) {
+                    console.error('生成二维码失败:', error);
+                    DOM.qrcodeDiv.innerHTML = `
+                        <div style="padding:20px; background:white; border-radius:8px;">
+                            <p style="color:red; font-size:12px;">二维码生成失败</p>
+                            <p style="font-size:10px; word-break:break-all;">会议ID: ${meetingId}</p>
+                            <p style="font-size:10px; word-break:break-all;">请将会议ID发送给委员手动登录</p>
+                        </div>
+                    `;
+                }
+            } else {
+                // 本地运行 - 生成文本内容
+                const qrContent = `会议表决系统\n会议ID: ${meetingId}\n请手动输入登录`;
+                
+                try {
+                    new QRCode(DOM.qrcodeDiv, {
+                        text: qrContent,
+                        width: 200,
+                        height: 200,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                } catch (error) {
+                    console.error('生成二维码失败:', error);
+                    DOM.qrcodeDiv.innerHTML = `
+                        <div style="padding:20px; background:white; border-radius:8px;">
+                            <p style="color:red; font-size:12px;">二维码生成失败</p>
+                            <p style="font-size:10px; word-break:break-all;">会议ID: ${meetingId}</p>
+                            <p style="font-size:10px; word-break:break-all;">请将会议ID发送给委员手动登录</p>
+                        </div>
+                    `;
+                }
+            }
+            
+            // 在邮件预览中添加信息
+            updateEmailPreviewWithQRInfo(meetingId);
+        }
+
+        // 生成登录二维码（示例）
+        function generateLoginQRCode() {
+            DOM.loginQrcodeDiv.innerHTML = '';
+            
+            let qrContent;
+            if (isDeployed()) {
+                qrContent = `${getCurrentUrl()}\n投资审查委员会委员表决系统`;
+            } else {
+                qrContent = "投资审查委员会委员表决系统\n请部署到GitHub Pages后使用完整功能";
+            }
+            
+            try {
+                new QRCode(DOM.loginQrcodeDiv, {
+                    text: qrContent,
+                    width: 200,
+                    height: 200,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            } catch (error) {
+                console.error('生成登录二维码失败:', error);
+                DOM.loginQrcodeDiv.innerHTML = `
+                    <div style="padding:20px; background:white; border-radius:8px;">
+                        <p style="color:red; font-size:12px;">二维码生成失败</p>
+                        <p style="font-size:10px;">请手动输入会议ID和委员姓名登录</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 清空表单
+        function clearForm() {
+            document.getElementById('meeting-session').value = '';
+            document.getElementById('meeting-content').value = '';
+            document.getElementById('committee-members').value = '';
+            setDefaultTimes();
+            DOM.qrSection.classList.add('hidden');
+            DOM.emailPreview.value = '';
+            showAlert('表单已清空', 'warning');
+        }
+
+        // 加载会议列表
+        function loadMeetingsList() {
+            DOM.meetingsList.innerHTML = '';
+            
+            if (AppState.meetings.length === 0) {
+                DOM.meetingsList.innerHTML = '<div class="meeting-item"><p>暂无会议数据</p></div>';
+                return;
+            }
+            
+            // 按创建时间倒序排列
+            const sortedMeetings = [...AppState.meetings].sort((a, b) => 
+                new Date(b.createdAt) - new Date(a.createdAt)
+            );
+            
+            sortedMeetings.forEach(meeting => {
+                // 更新会议状态
+                meeting.status = getMeetingStatus(meeting.startTime, meeting.endTime);
+                
+                // 获取表决结果
+                const voteResults = getVoteResults(meeting.id);
+                
+                const meetingElement = document.createElement('div');
+                meetingElement.className = 'meeting-item';
+                meetingElement.innerHTML = `
+                    <div class="meeting-header">
+                        <div class="meeting-title">${meeting.session}</div>
+                        <div class="meeting-status status-${meeting.status}">${getStatusText(meeting.status)}</div>
+                    </div>
+                    <p>${meeting.content.substring(0, 100)}${meeting.content.length > 100 ? '...' : ''}</p>
+                    <div class="vote-info">
+                        <div>表决时间：${formatDateTime(meeting.startTime)} - ${formatDateTime(meeting.endTime)}</div>
+                        <div>委员人数：${meeting.members.length}人</div>
+                    </div>
+                    <div class="vote-results">
+                        <div class="vote-result-item result-agree">
+                            <i class="fas fa-check-circle"></i> 同意：${voteResults.agree}
+                        </div>
+                        <div class="vote-result-item result-disagree">
+                            <i class="fas fa-times-circle"></i> 不同意：${voteResults.disagree}
+                        </div>
+                        <div class="vote-result-item result-review">
+                            <i class="fas fa-pause-circle"></i> 再议：${voteResults.review}
+                        </div>
+                    </div>
+                    <div class="members-list">
+                        ${meeting.members.map(member => `<span class="member-tag">${member}</span>`).join('')}
+                    </div>
+                    <div class="btn-group" style="margin-top:15px;">
+                        <button class="btn" onclick="editMeeting('${meeting.id}')">编辑</button>
+                        <button class="btn btn-secondary" onclick="deleteMeeting('${meeting.id}')">删除</button>
+                        <button class="btn" onclick="viewVotes('${meeting.id}')">查看表决</button>
+                    </div>
+                    <div style="margin-top:10px; font-size:12px; color:#666;">
+                        会议ID: ${meeting.id}
+                    </div>
+                `;
+                
+                DOM.meetingsList.appendChild(meetingElement);
+            });
+            
+            // 更新本地存储
+            localStorage.setItem('meetings', JSON.stringify(AppState.meetings));
+        }
+
+        // 编辑会议
+        function editMeeting(meetingId) {
+            const meeting = AppState.meetings.find(m => m.id === meetingId);
+            if (!meeting) return;
+            
+            document.getElementById('meeting-session').value = meeting.session;
+            document.getElementById('meeting-content').value = meeting.content;
+            document.getElementById('vote-start').value = meeting.startTime;
+            document.getElementById('vote-end').value = meeting.endTime;
+            document.getElementById('committee-members').value = meeting.members.join('\n');
+            
+            // 生成该会议的二维码
+            generateMeetingQRCode(meetingId);
+            DOM.qrSection.classList.remove('hidden');
+            
+            // 显示会议ID
+            if (DOM.currentMeetingIdSpan) {
+                DOM.currentMeetingIdSpan.textContent = meetingId;
+            }
+            
+            // 滚动到顶部
+            window.scrollTo(0, 0);
+            
+            showAlert('已加载会议信息，可进行修改', 'warning');
+        }
+
+        // 删除会议
+        function deleteMeeting(meetingId) {
+            if (confirm('确定要删除此会议吗？此操作将同时删除所有表决记录。')) {
+                AppState.meetings = AppState.meetings.filter(m => m.id !== meetingId);
+                delete AppState.votes[meetingId];
+                
+                localStorage.setItem('meetings', JSON.stringify(AppState.meetings));
+                localStorage.setItem('votes', JSON.stringify(AppState.votes));
+                
+                loadMeetingsList();
+                showAlert('会议已删除', 'success');
+            }
+        }
+
+        // 查看表决详情
+        function viewVotes(meetingId) {
+            const meeting = AppState.meetings.find(m => m.id === meetingId);
+            if (!meeting) return;
+            
+            let votesDetail = `会议：${meeting.session}\n\n`;
+            votesDetail += `表决内容：${meeting.content}\n\n`;
+            votesDetail += `表决时间：${formatDateTime(meeting.startTime)} - ${formatDateTime(meeting.endTime)}\n\n`;
+            votesDetail += "委员表决情况：\n";
+            votesDetail += "----------------------------\n";
+            
+            const meetingVotes = AppState.votes[meetingId] || {};
+            meeting.members.forEach(member => {
+                const vote = meetingVotes[member];
+                if (vote) {
+                    votesDetail += `${member}：${getVoteText(vote.vote)}`;
+                    if (vote.comment) votesDetail += `，意见：${vote.comment}`;
+                    votesDetail += '\n';
+                } else {
+                    votesDetail += `${member}：未表决\n`;
+                }
+            });
+            
+            alert(votesDetail);
+        }
+
+        // 手动登录（委员）
+        function manualLogin() {
+            const meetingId = document.getElementById('meeting-id-input').value.trim();
+            const memberName = document.getElementById('member-name-input').value.trim();
+            
+            if (!meetingId || !memberName) {
+                showAlert('请输入会议ID和委员姓名', 'error');
+                return;
+            }
+            
+            const meeting = AppState.meetings.find(m => m.id === meetingId);
+            if (!meeting) {
+                showAlert('未找到对应的会议', 'error');
+                return;
+            }
+            
+            if (!meeting.members.includes(memberName)) {
+                showAlert('您不是本次会议的参评委员', 'error');
+                return;
+            }
+            
+            // 检查表决时间
+            const now = new Date();
+            const startTime = new Date(meeting.startTime);
+            const endTime = new Date(meeting.endTime);
+            
+            if (now < startTime) {
+                showAlert('表决尚未开始', 'error');
+                return;
+            }
+            
+            if (now > endTime) {
+                showAlert('表决已结束', 'error');
+                return;
+            }
+            
+            // 检查是否已表决
+            const meetingVotes = AppState.votes[meetingId] || {};
+            if (meetingVotes[memberName]) {
+                showAlert('您已提交过表决，不能重复提交', 'warning');
+            }
+            
+            // 登录成功
+            AppState.currentMeeting = meeting;
+            AppState.currentMember = memberName;
+            
+            // 更新UI
+            DOM.memberLogin.classList.add('hidden');
+            DOM.memberVoting.classList.remove('hidden');
+            
+            // 显示会议信息
+            document.getElementById('current-meeting-session').textContent = meeting.session;
+            document.getElementById('current-meeting-content').textContent = meeting.content;
+            document.getElementById('current-vote-time').textContent = 
+                `${formatDateTime(meeting.startTime)} - ${formatDateTime(meeting.endTime)}`;
+            document.getElementById('current-member-name').textContent = memberName;
+            
+            // 更新用户信息
+            DOM.currentUser.textContent = memberName;
+            
+            // 清除登录表单
+            document.getElementById('meeting-id-input').value = '';
+            document.getElementById('member-name-input').value = '';
+            
+            showAlert(`欢迎您，${memberName}委员！`, 'success');
+        }
+
+        // 提交表决
+        function submitVote() {
+            const selectedOption = document.querySelector('.vote-option.selected');
+            if (!selectedOption) {
+                showAlert('请选择表决意见', 'error');
+                return;
+            }
+            
+            const voteType = selectedOption.getAttribute('data-vote');
+            const comment = document.getElementById('member-comment').value.trim();
+            
+            // 创建表决记录
+            const voteRecord = {
+                meetingId: AppState.currentMeeting.id,
+                member: AppState.currentMember,
+                vote: voteType,
+                comment: comment,
+                files: Array.from(document.querySelectorAll('#file-list .file-item')).map(item => item.textContent),
+                votedAt: new Date().toISOString()
+            };
+            
+            // 保存表决
+            if (!AppState.votes[AppState.currentMeeting.id]) {
+                AppState.votes[AppState.currentMeeting.id] = {};
+            }
+            
+            AppState.votes[AppState.currentMeeting.id][AppState.currentMember] = voteRecord;
+            localStorage.setItem('votes', JSON.stringify(AppState.votes));
+            
+            // 显示成功消息
+            document.getElementById('vote-success').classList.remove('hidden');
+            
+            // 更新会议列表
+            loadMeetingsList();
+            
+            // 3秒后自动退出
+            setTimeout(() => {
+                logoutMember();
+            }, 3000);
+        }
+
+        // 退出委员登录
+        function logoutMember() {
+            resetMemberLogin();
+            showAlert('已退出登录', 'success');
+        }
+
+        // 重置委员登录状态
+        function resetMemberLogin() {
+            AppState.currentMeeting = null;
+            AppState.currentMember = null;
+            
+            DOM.memberLogin.classList.remove('hidden');
+            DOM.memberVoting.classList.add('hidden');
+            document.getElementById('vote-success').classList.add('hidden');
+            
+            // 重置表单
+            document.querySelectorAll('.vote-option').forEach(opt => opt.classList.remove('selected'));
+            document.getElementById('member-comment').value = '';
+            document.getElementById('file-list').innerHTML = '';
+            document.getElementById('file-upload-input').value = '';
+            
+            // 重置用户信息
+            DOM.currentUser.textContent = '未登录';
+        }
+
+        // 处理文件上传
+        function handleFileUpload(event) {
+            const files = event.target.files;
+            const fileList = document.getElementById('file-list');
+            fileList.innerHTML = '';
+            
+            for (let i = 0; i < Math.min(files.length, 3); i++) {
+                const file = files[i];
+                if (file.type.startsWith('image/')) {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    fileItem.textContent = `📷 ${file.name} (${formatFileSize(file.size)})`;
+                    fileList.appendChild(fileItem);
+                }
+            }
+            
+            if (files.length > 3) {
+                const warning = document.createElement('div');
+                warning.className = 'file-item';
+                warning.textContent = `仅显示前3个文件，共${files.length}个文件`;
+                warning.style.color = '#ffc107';
+                fileList.appendChild(warning);
+            }
+        }
+
+        // 导出Excel
+        function exportToExcel() {
+            if (AppState.meetings.length === 0) {
+                showAlert('没有可导出的数据', 'warning');
+                return;
+            }
+            
+            // 创建工作簿
+            const wb = XLSX.utils.book_new();
+            
+            // 为每个会议创建工作表
+            AppState.meetings.forEach(meeting => {
+                const meetingVotes = AppState.votes[meeting.id] || {};
+                
+                // 创建数据行
+                const data = [
+                    ['会议届次', meeting.session],
+                    ['表决内容', meeting.content],
+                    ['表决开始时间', formatDateTime(meeting.startTime)],
+                    ['表决结束时间', formatDateTime(meeting.endTime)],
+                    ['创建时间', formatDateTime(meeting.createdAt)],
+                    [''],
+                    ['委员姓名', '表决意见', '补充意见', '附件数量', '表决时间']
+                ];
+                
+                // 添加委员表决数据
+                meeting.members.forEach(member => {
+                    const vote = meetingVotes[member];
+                    if (vote) {
+                        data.push([
+                            member,
+                            getVoteText(vote.vote),
+                            vote.comment || '',
+                            vote.files ? vote.files.length : 0,
+                            formatDateTime(vote.votedAt)
+                        ]);
+                    } else {
+                        data.push([member, '未表决', '', '', '']);
+                    }
+                });
+                
+                // 添加统计行
+                const voteResults = getVoteResults(meeting.id);
+                data.push(['']);
+                data.push(['表决统计', '']);
+                data.push(['同意', voteResults.agree]);
+                data.push(['不同意', voteResults.disagree]);
+                data.push(['补充资料后再议', voteResults.review]);
+                data.push(['未表决', meeting.members.length - (voteResults.agree + voteResults.disagree + voteResults.review)]);
+                
+                // 创建工作表
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                
+                // 设置列宽
+                const wscols = [
+                    {wch: 15}, // 委员姓名
+                    {wch: 15}, // 表决意见
+                    {wch: 40}, // 补充意见
+                    {wch: 12}, // 附件数量
+                    {wch: 20}  // 表决时间
+                ];
+                ws['!cols'] = wscols;
+                
+                // 添加工作表到工作簿
+                XLSX.utils.book_append_sheet(wb, ws, meeting.session.substring(0, 31));
+            });
+            
+            // 生成Excel文件并下载
+            const fileName = `投审会表决台账_${new Date().toISOString().slice(0, 10)}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+            
+            showAlert(`已导出Excel文件：${fileName}`, 'success');
+        }
+
+        // 更新邮件预览
+        function updateEmailPreview() {
+            const session = document.getElementById('meeting-session').value.trim();
+            const content = document.getElementById('meeting-content').value.trim();
+            const startTime = document.getElementById('vote-start').value;
+            const endTime = document.getElementById('vote-end').value;
+            const membersText = document.getElementById('committee-members').value.trim();
+            
+            let preview = '';
+            
+            if (session) {
+                preview += `会议届次：${session}\n\n`;
+            }
+            
+            if (content) {
+                preview += `表决内容：${content}\n\n`;
+            }
+            
+            if (startTime && endTime) {
+                preview += `表决时间：${formatDateTime(startTime)} 至 ${formatDateTime(endTime)}\n\n`;
+            }
+            
+            if (membersText) {
+                const members = membersText.split('\n').filter(name => name.trim() !== '');
+                preview += `参评委员：${members.join('、')}\n\n`;
+            }
+            
+            preview += `请扫描下方二维码登录表决系统进行表决：\n`;
+            preview += `（二维码将在保存会议后生成）\n\n`;
+            preview += `投资审查委员会秘书处`;
+            
+            DOM.emailPreview.value = preview;
+        }
+
+        // 更新邮件预览（带二维码信息）
+        function updateEmailPreviewWithQRInfo(meetingId) {
+            let emailText = DOM.emailPreview.value;
+            
+            if (isDeployed()) {
+                const loginUrl = `${getCurrentUrl()}?meeting=${meetingId}`;
+                emailText += `\n\n会议登录信息：`;
+                emailText += `\n会议ID: ${meetingId}`;
+                emailText += `\n登录链接: ${loginUrl}`;
+                emailText += `\n登录说明: 委员可扫描二维码或点击链接直接登录表决系统。`;
+            } else {
+                emailText += `\n\n会议登录信息（本地模式）：`;
+                emailText += `\n会议ID: ${meetingId}`;
+                emailText += `\n登录说明: 请打开表决系统，切换到"委员表决"角色，手动输入会议ID和委员姓名登录。`;
+                emailText += `\n注意：当前为本地文件，请部署到服务器后重新生成二维码。`;
+            }
+            
+            DOM.emailPreview.value = emailText;
+        }
+
+        // 设置默认时间
+        function setDefaultTimes() {
+            const now = new Date();
+            const startTime = new Date(now.getTime() + 60 * 60 * 1000); // 1小时后
+            const endTime = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7天后
+            
+            document.getElementById('vote-start').value = formatDateForInput(startTime);
+            document.getElementById('vote-end').value = formatDateForInput(endTime);
+            
+            updateEmailPreview();
+        }
+
+        // 显示提示消息
+        function showAlert(message, type = 'info') {
+            DOM.alertMessage.textContent = message;
+            DOM.alertMessage.className = `alert alert-${type}`;
+            DOM.alertMessage.style.display = 'block';
+            
+            setTimeout(() => {
+                DOM.alertMessage.style.display = 'none';
+            }, 5000);
+        }
+
+        // 获取会议状态
+        function getMeetingStatus(startTime, endTime) {
+            const now = new Date();
+            const start = new Date(startTime);
+            const end = new Date(endTime);
+            
+            if (now < start) return 'upcoming';
+            if (now > end) return 'ended';
+            return 'ongoing';
+        }
+
+        // 获取状态文本
+        function getStatusText(status) {
+            const statusMap = {
+                'upcoming': '未开始',
+                'ongoing': '进行中',
+                'ended': '已结束'
+            };
+            return statusMap[status] || status;
+        }
+
+        // 获取表决结果统计
+        function getVoteResults(meetingId) {
+            const meetingVotes = AppState.votes[meetingId] || {};
+            const results = {
+                agree: 0,
+                disagree: 0,
+                review: 0
+            };
+            
+            Object.values(meetingVotes).forEach(vote => {
+                if (vote.vote === 'agree') results.agree++;
+                if (vote.vote === 'disagree') results.disagree++;
+                if (vote.vote === 'review') results.review++;
+            });
+            
+            return results;
+        }
+
+        // 获取表决文本
+        function getVoteText(voteType) {
+            const voteMap = {
+                'agree': '同意',
+                'disagree': '不同意',
+                'review': '补充资料后再议'
+            };
+            return voteMap[voteType] || voteType;
+        }
+
+        // 格式化日期时间
+        function formatDateTime(dateTimeStr) {
+            const date = new Date(dateTimeStr);
+            return date.toLocaleString('zh-CN');
+        }
+
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // 为input[type=datetime-local]格式化日期
+        function formatDateForInput(date) {
+            return date.toISOString().slice(0, 16);
+        }
+
+        // 生成示例数据
+        function generateSampleData() {
+            const sampleMeeting = {
+                id: 'meeting_sample_001',
+                session: '第15届第3次会议',
+                content: '关于XX公司增资扩股项目的投资审查',
+                startTime: new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16), // 1小时后
+                endTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16), // 7天后
+                members: ['张明', '李华', '王芳', '刘伟', '陈静'],
+                createdAt: new Date().toISOString(),
+                status: 'upcoming'
+            };
+            
+            AppState.meetings.push(sampleMeeting);
+            AppState.votes[sampleMeeting.id] = {};
+            
+            localStorage.setItem('meetings', JSON.stringify(AppState.meetings));
+            localStorage.setItem('votes', JSON.stringify(AppState.votes));
+            
+            loadMeetingsList();
+            showAlert('已生成示例数据，请测试系统功能', 'success');
+        }
+
+        // 检查URL参数，自动登录
+        function checkUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const meetingId = urlParams.get('meeting');
+            
+            if (meetingId) {
+                // 自动切换到委员端
+                switchRole('member');
+                
+                // 显示会议ID
+                document.getElementById('meeting-id-input').value = meetingId;
+                
+                showAlert('检测到会议链接，请输入委员姓名登录', 'warning');
+            }
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
