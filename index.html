@@ -8,6 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/davidshimjs-qrcodejs@0.0.2/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
+        /* 保持所有原始样式不变 */
         * {
             margin: 0;
             padding: 0;
@@ -643,11 +644,6 @@
                         <div id="qrcode" class="qr-code"></div>
                         <p>委员扫描此二维码即可登录表决系统</p>
                         <p style="font-size: 12px; color: #666; margin-top: 10px;">会议ID: <span id="current-meeting-id"></span></p>
-                        <div id="deployment-status" style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 5px; display: none;">
-                            <p style="font-size: 12px; color: #856404; margin: 0;">
-                                <strong>提示：</strong><span id="deployment-message"></span>
-                            </p>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -657,16 +653,16 @@
                 <!-- 委员登录界面 -->
                 <div id="member-login" class="login-container">
                     <h2>委员登录</h2>
-                    <p>请扫描秘书发送的二维码登录表决系统</p>
+                    <p id="login-description">请扫描秘书发送的二维码登录表决系统</p>
                     <div class="qr-container">
                         <div id="login-qrcode" class="qr-code"></div>
                         <p>或手动输入会议ID和委员姓名登录</p>
                     </div>
                     <div class="form-group">
-                        <input type="text" id="meeting-id-input" class="form-control" placeholder="会议ID">
+                        <input type="text" id="meeting-id-input" class="form-control" placeholder="会议ID" readonly>
                     </div>
                     <div class="form-group">
-                        <input type="text" id="member-name-input" class="form-control" placeholder="委员姓名">
+                        <input type="text" id="member-name-input" class="form-control" placeholder="委员姓名" autofocus>
                     </div>
                     <button id="manual-login" class="btn">登录</button>
                 </div>
@@ -756,16 +752,6 @@
     </div>
 
     <script>
-        // 检测当前是否部署在服务器上
-        function isDeployed() {
-            return window.location.protocol === 'https:' || window.location.protocol === 'http:';
-        }
-
-        // 获取当前网址（用于生成二维码）
-        function getCurrentUrl() {
-            return window.location.origin + window.location.pathname;
-        }
-
         // 应用状态管理
         const AppState = {
             currentRole: 'secretary',
@@ -792,16 +778,14 @@
             loginQrcodeDiv: document.getElementById('login-qrcode'),
             alertMessage: document.getElementById('alert-message'),
             currentMeetingIdSpan: document.getElementById('current-meeting-id'),
-            deploymentStatus: document.getElementById('deployment-status'),
-            deploymentMessage: document.getElementById('deployment-message')
+            meetingIdInput: document.getElementById('meeting-id-input'),
+            memberNameInput: document.getElementById('member-name-input'),
+            loginDescription: document.getElementById('login-description')
         };
 
         // 初始化应用
         function initApp() {
             if (AppState.initialized) return;
-            
-            // 显示部署状态
-            showDeploymentStatus();
             
             // 绑定事件监听器
             bindEvents();
@@ -817,30 +801,10 @@
                 generateSampleData();
             }
             
-            // 生成示例登录二维码
-            generateLoginQRCode();
-            
-            AppState.initialized = true;
-            
             // 检查URL参数，自动登录
             checkUrlParams();
-        }
-
-        // 显示部署状态
-        function showDeploymentStatus() {
-            if (isDeployed()) {
-                // 已部署到服务器
-                DOM.deploymentStatus.style.display = 'block';
-                DOM.deploymentMessage.textContent = '系统已部署，二维码可直接使用！';
-                DOM.deploymentStatus.style.backgroundColor = '#d4edda';
-                DOM.deploymentStatus.style.color = '#155724';
-                console.log('系统已部署，当前网址:', getCurrentUrl());
-            } else {
-                // 本地运行
-                DOM.deploymentStatus.style.display = 'block';
-                DOM.deploymentMessage.textContent = '当前为本地运行，微信扫码可能无法直接打开。请将系统部署到GitHub Pages后使用。';
-                console.log('本地运行模式');
-            }
+            
+            AppState.initialized = true;
         }
 
         // 绑定事件
@@ -962,13 +926,47 @@
             }
         }
 
+        // 发送通知
+        function sendNotifications() {
+            const session = document.getElementById('meeting-session').value.trim();
+            const content = document.getElementById('meeting-content').value.trim();
+            const startTime = document.getElementById('vote-start').value;
+            const endTime = document.getElementById('vote-end').value;
+            const membersText = document.getElementById('committee-members').value.trim();
+            
+            if (!session || !content || !startTime || !endTime || !membersText) {
+                showAlert('请先填写并保存会议信息！', 'error');
+                return;
+            }
+            
+            // 查找最近保存的会议
+            const latestMeeting = AppState.meetings[AppState.meetings.length - 1];
+            if (latestMeeting) {
+                // 确保二维码已生成
+                generateMeetingQRCode(latestMeeting.id);
+                DOM.qrSection.classList.remove('hidden');
+            }
+            
+            // 模拟发送邮件
+            const members = membersText.split('\n').filter(name => name.trim() !== '').map(name => name.trim());
+            
+            // 显示邮件发送成功提示
+            showAlert(`已向${members.length}位委员发送表决通知邮件！`, 'success');
+        }
+
         // 生成会议二维码
         function generateMeetingQRCode(meetingId) {
             DOM.qrcodeDiv.innerHTML = '';
             
-            if (isDeployed()) {
-                // 已部署 - 生成完整链接
-                const loginUrl = `${getCurrentUrl()}?meeting=${meetingId}`;
+            // 生成登录URL - 关键修改：二维码直接包含带参数的完整URL
+            const currentUrl = window.location.href.split('?')[0];
+            
+            // 检查是否是GitHub Pages部署
+            const isGitHubPages = currentUrl.includes('github.io');
+            
+            if (isGitHubPages) {
+                // GitHub Pages - 生成带参数的URL
+                const loginUrl = `${currentUrl}?meeting=${meetingId}`;
                 
                 try {
                     // 使用QRCode库生成二维码
@@ -981,7 +979,7 @@
                         correctLevel: QRCode.CorrectLevel.H
                     });
                     
-                    console.log('二维码链接（可微信扫码）:', loginUrl);
+                    console.log('二维码生成成功:', loginUrl);
                     
                     // 显示二维码链接
                     const linkInfo = document.createElement('p');
@@ -989,7 +987,7 @@
                     linkInfo.style.color = '#666';
                     linkInfo.style.marginTop = '10px';
                     linkInfo.style.wordBreak = 'break-all';
-                    linkInfo.textContent = `链接: ${loginUrl}`;
+                    linkInfo.textContent = `扫码链接: ${loginUrl}`;
                     DOM.qrcodeDiv.parentNode.appendChild(linkInfo);
                     
                 } catch (error) {
@@ -1004,7 +1002,7 @@
                 }
             } else {
                 // 本地运行 - 生成文本内容
-                const qrContent = `会议表决系统\n会议ID: ${meetingId}\n请手动输入登录`;
+                const qrContent = `会议表决系统\n会议ID: ${meetingId}\n请打开系统后输入以上ID登录`;
                 
                 try {
                     new QRCode(DOM.qrcodeDiv, {
@@ -1025,40 +1023,6 @@
                         </div>
                     `;
                 }
-            }
-            
-            // 在邮件预览中添加信息
-            updateEmailPreviewWithQRInfo(meetingId);
-        }
-
-        // 生成登录二维码（示例）
-        function generateLoginQRCode() {
-            DOM.loginQrcodeDiv.innerHTML = '';
-            
-            let qrContent;
-            if (isDeployed()) {
-                qrContent = `${getCurrentUrl()}\n投资审查委员会委员表决系统`;
-            } else {
-                qrContent = "投资审查委员会委员表决系统\n请部署到GitHub Pages后使用完整功能";
-            }
-            
-            try {
-                new QRCode(DOM.loginQrcodeDiv, {
-                    text: qrContent,
-                    width: 200,
-                    height: 200,
-                    colorDark: "#000000",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.H
-                });
-            } catch (error) {
-                console.error('生成登录二维码失败:', error);
-                DOM.loginQrcodeDiv.innerHTML = `
-                    <div style="padding:20px; background:white; border-radius:8px;">
-                        <p style="color:red; font-size:12px;">二维码生成失败</p>
-                        <p style="font-size:10px;">请手动输入会议ID和委员姓名登录</p>
-                    </div>
-                `;
             }
         }
 
@@ -1203,13 +1167,48 @@
             alert(votesDetail);
         }
 
-        // 手动登录（委员）
-        function manualLogin() {
-            const meetingId = document.getElementById('meeting-id-input').value.trim();
-            const memberName = document.getElementById('member-name-input').value.trim();
+        // 检查URL参数，自动登录
+        function checkUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const meetingId = urlParams.get('meeting');
             
-            if (!meetingId || !memberName) {
-                showAlert('请输入会议ID和委员姓名', 'error');
+            if (meetingId) {
+                console.log('检测到会议ID参数:', meetingId);
+                
+                // 自动切换到委员端
+                switchRole('member');
+                
+                // 自动填充会议ID
+                DOM.meetingIdInput.value = meetingId;
+                
+                // 修改说明文字
+                DOM.loginDescription.textContent = '已自动识别会议，请输入委员姓名登录';
+                
+                // 自动聚焦到委员姓名输入框
+                setTimeout(() => {
+                    DOM.memberNameInput.focus();
+                }, 100);
+                
+                showAlert('已自动识别会议，请输入委员姓名登录', 'warning');
+            }
+        }
+
+        // 手动登录（委员）- 修正版
+        function manualLogin() {
+            const meetingId = DOM.meetingIdInput.value.trim();
+            const memberName = DOM.memberNameInput.value.trim();
+            
+            console.log('尝试登录，会议ID:', meetingId, '委员姓名:', memberName);
+            
+            if (!meetingId) {
+                showAlert('请输入会议ID', 'error');
+                DOM.meetingIdInput.focus();
+                return;
+            }
+            
+            if (!memberName) {
+                showAlert('请输入委员姓名', 'error');
+                DOM.memberNameInput.focus();
                 return;
             }
             
@@ -1243,6 +1242,7 @@
             const meetingVotes = AppState.votes[meetingId] || {};
             if (meetingVotes[memberName]) {
                 showAlert('您已提交过表决，不能重复提交', 'warning');
+                // 仍然允许查看，但不允许再次提交
             }
             
             // 登录成功
@@ -1262,10 +1262,6 @@
             
             // 更新用户信息
             DOM.currentUser.textContent = memberName;
-            
-            // 清除登录表单
-            document.getElementById('meeting-id-input').value = '';
-            document.getElementById('member-name-input').value = '';
             
             showAlert(`欢迎您，${memberName}委员！`, 'success');
         }
@@ -1469,26 +1465,6 @@
             DOM.emailPreview.value = preview;
         }
 
-        // 更新邮件预览（带二维码信息）
-        function updateEmailPreviewWithQRInfo(meetingId) {
-            let emailText = DOM.emailPreview.value;
-            
-            if (isDeployed()) {
-                const loginUrl = `${getCurrentUrl()}?meeting=${meetingId}`;
-                emailText += `\n\n会议登录信息：`;
-                emailText += `\n会议ID: ${meetingId}`;
-                emailText += `\n登录链接: ${loginUrl}`;
-                emailText += `\n登录说明: 委员可扫描二维码或点击链接直接登录表决系统。`;
-            } else {
-                emailText += `\n\n会议登录信息（本地模式）：`;
-                emailText += `\n会议ID: ${meetingId}`;
-                emailText += `\n登录说明: 请打开表决系统，切换到"委员表决"角色，手动输入会议ID和委员姓名登录。`;
-                emailText += `\n注意：当前为本地文件，请部署到服务器后重新生成二维码。`;
-            }
-            
-            DOM.emailPreview.value = emailText;
-        }
-
         // 设置默认时间
         function setDefaultTimes() {
             const now = new Date();
@@ -1602,22 +1578,6 @@
             
             loadMeetingsList();
             showAlert('已生成示例数据，请测试系统功能', 'success');
-        }
-
-        // 检查URL参数，自动登录
-        function checkUrlParams() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const meetingId = urlParams.get('meeting');
-            
-            if (meetingId) {
-                // 自动切换到委员端
-                switchRole('member');
-                
-                // 显示会议ID
-                document.getElementById('meeting-id-input').value = meetingId;
-                
-                showAlert('检测到会议链接，请输入委员姓名登录', 'warning');
-            }
         }
 
         // 页面加载完成后初始化
